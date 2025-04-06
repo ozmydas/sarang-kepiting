@@ -11,33 +11,31 @@ pub struct NotesPayload {
     pub content: String,
 }
 
-
-
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow, Default)]
 pub struct NotesModel {
     #[serde(alias = "id")]
-    pub id: i32,
+    pub id: Option<i32>,
 
     #[serde(alias = "user_id")]
     pub user_id: Option<i32>,
 
     #[serde(alias = "code")]
-    pub code: String,
+    pub code: String, // required
 
     #[serde(alias = "type")]
-    pub r#type: String,
+    pub r#type: Option<String>,
 
     #[serde(alias = "title")]
-    pub title: String,
+    pub title: String, // required
 
     #[serde(alias = "content")]
-    pub content: String,
+    pub content: String, // required
 
     #[serde(alias = "visibility")]
-    pub visibility: String,
+    pub visibility: Option<String>,
 
     #[serde(alias = "is_deleted")]
-    pub is_deleted: bool,
+    pub is_deleted: Option<bool>,
 
     #[serde(alias = "created_at")]
     pub created_at: Option<DateTime<Utc>>,

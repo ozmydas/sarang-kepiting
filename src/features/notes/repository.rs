@@ -1,48 +1,43 @@
-use sqlx::{query, Pool, Postgres};
+use sqlx::{query, PgPool, Pool, Postgres};
+use std::task::Poll;
 use uuid::Uuid;
 
+use super::model::NotesModel;
 use crate::{config::database::get_db, utils::custom_trait};
 
-use super::model::NotesModel;
-
-pub struct NoteRepo<'a> {
-    pub db: &'a Pool<Postgres>,
-    pub code: &'a str,
-    pub title: &'a str,
-    pub content: &'a str,
+pub struct NoteRepo {
+    pub db: &'static PgPool,
 }
 
-
-impl<'a> custom_trait::RepositoryTrait for NoteRepo<'a> {
-    type Row = NotesModel;
+impl NoteRepo {
+    // set db
+    pub fn new(db: &'static PgPool) -> Self {
+        Self { db }
+    } // end func
 
     // create data
-    async fn create(&self) -> Result<Self::Row, sqlx::Error> {
+    pub async fn create(&self, item: NotesModel) -> Result<NotesModel, sqlx::Error> {
         let record = sqlx::query_as::<_, NotesModel>(
             "INSERT INTO notes_lists (code, title, content) VALUES ($1, $2, $3) RETURNING *",
         )
-        .bind(self.code)
-        .bind(self.title)
-        .bind(self.content)
+        .bind(item.code)
+        .bind(item.title)
+        .bind(item.content)
         .fetch_one(self.db)
         .await?;
 
         Ok(record)
-    }
-
-    async fn rows() -> Result<Self::Row, sqlx::Error> {
-        todo!()
-    }
-
-    async fn detail() -> Result<Self::Row, sqlx::Error> {
-        todo!()
     } // end func
 
-    async fn update(&self) -> Result<Self::Row, sqlx::Error> {
-        todo!()
-    }
+     // get data
+     pub async fn get_by_code(&self, code: String) -> Result<NotesModel, sqlx::Error> {
+        let record = sqlx::query_as::<_, NotesModel>(
+            "SELECT * from notes_lists WHERE code = $1",
+        )
+        .bind(code)
+        .fetch_one(self.db)
+        .await?;
 
-    async fn delete(&self) -> Result<Self::Row, sqlx::Error> {
-        todo!()
-    }
+        Ok(record)
+    } // end func
 }

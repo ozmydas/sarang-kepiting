@@ -1,9 +1,11 @@
+use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::routing::{delete, post};
 use axum::Json;
 use axum::{routing::get, Router};
 use axum_extra::extract::WithRejection;
 use serde_json::{json, Value};
+use uuid::Uuid;
 
 use crate::utils::custom_response::{output_json, ApiError, ResponseResult};
 
@@ -34,15 +36,17 @@ pub async fn save_handler(
 ) -> ResponseResult<Json<Value>> {
     match super::service::save_service(payload).await {
         Ok(res) => output_json(true, "data saved successfully".into(), res, None),
-        Err(err) => output_json(false, err.to_string(), [0;0], None),
+        Err(err) => output_json(false, err.to_string(), [0; 0], Some(204)),
     }
 } //end func
 
-pub async fn detail_handler() -> ResponseResult<Json<Value>> {
-    super::service::list_service();
-    let data = [0; 0];
-
-    output_json(false, String::from("test by system"), data, None)
+pub async fn detail_handler(
+    WithRejection(Path(code), _): WithRejection<Path<Uuid>, ApiError>,
+) -> ResponseResult<Json<Value>> {
+    match super::service::detail_service(code.into()).await {
+        Ok(res) => output_json(true, "data saved successfully".into(), res, None),
+        Err(err) => output_json(false, err.to_string(), [0; 0], Some(204)),
+    }
 } //end func
 
 pub async fn update_handler() -> ResponseResult<Json<Value>> {

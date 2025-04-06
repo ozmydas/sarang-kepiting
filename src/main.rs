@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
         .merge(routes::app_routes())
         .nest("/api", routes::api_routes())
         .layer(CorsLayer::permissive())
-        .layer(TraceLayer::new_for_http())
+        // .layer(TraceLayer::new_for_http())
         .layer(middleware::map_response(
             middlewares::response::main_response_mapper,
         ));
