@@ -1,0 +1,11 @@
+-- Add migration script here
+
+CREATE TABLE log_visitors (
+    id SERIAL PRIMARY KEY,
+    features VARCHAR(255) DEFAULT NULL,
+    ip VARCHAR(45) NOT NULL DEFAULT '127.0.0.1',
+    date DATE DEFAULT CURRENT_DATE,
+    count INT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
