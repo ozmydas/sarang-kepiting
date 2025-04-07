@@ -1,6 +1,6 @@
 use axum::{
     extract::rejection::{JsonRejection, PathRejection},
-    http::{self, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
@@ -95,7 +95,7 @@ pub fn output_json<T>(
     status: bool,
     msg: String,
     data: T,
-    code: Option<u8>,
+    code: Option<u16>,
 ) -> ResponseResult<Json<Value>>
 where
     T: Serialize,

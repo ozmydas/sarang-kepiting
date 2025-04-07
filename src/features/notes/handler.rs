@@ -1,12 +1,12 @@
-use axum::extract::Path;
-use axum::response::IntoResponse;
+use axum::extract::{Path, Query};
 use axum::routing::{delete, post};
 use axum::Json;
 use axum::{routing::get, Router};
 use axum_extra::extract::WithRejection;
-use serde_json::{json, Value};
+use serde_json::Value;
 use uuid::Uuid;
 
+use crate::models::app_model;
 use crate::utils::custom_response::{output_json, ApiError, ResponseResult};
 
 use super::model::NotesPayload;
@@ -24,11 +24,13 @@ pub fn notes_routes() -> Router {
 
 /***********/
 
-pub async fn list_handler() -> ResponseResult<Json<Value>> {
-    super::service::list_service();
-    let data = [0; 0];
-
-    output_json(false, String::from("test by system"), data, None)
+pub async fn list_handler(
+    paginatition: Query<app_model::Pagination>,
+) -> ResponseResult<Json<Value>> {
+    match super::service::list_service(paginatition).await {
+        Ok(res) => output_json(true, "data retrieved successfully".into(), res, None),
+        Err(err) => output_json(false, err.to_string(), [0; 0], Some(204)),
+    }
 } //end func
 
 pub async fn save_handler(
@@ -44,20 +46,26 @@ pub async fn detail_handler(
     WithRejection(Path(code), _): WithRejection<Path<Uuid>, ApiError>,
 ) -> ResponseResult<Json<Value>> {
     match super::service::detail_service(code.into()).await {
+        Ok(res) => output_json(true, "data retrieved successfully".into(), res, None),
+        Err(err) => output_json(false, err.to_string(), [0; 0], Some(204)),
+    }
+} //end func
+
+pub async fn update_handler(
+    WithRejection(Path(code), _): WithRejection<Path<Uuid>, ApiError>,
+    WithRejection(Json(payload), _): WithRejection<Json<NotesPayload>, ApiError>,
+) -> ResponseResult<Json<Value>> {
+    match super::service::update_service(code.into(), payload).await {
         Ok(res) => output_json(true, "data saved successfully".into(), res, None),
         Err(err) => output_json(false, err.to_string(), [0; 0], Some(204)),
     }
 } //end func
 
-pub async fn update_handler() -> ResponseResult<Json<Value>> {
-    super::service::list_service();
-    let data = [0; 0];
-
-    output_json(false, String::from("test by system"), data, None)
-} //end func
-
-pub async fn delete_handler() -> ResponseResult<Json<Value>> {
-    super::service::list_service();
-
-    output_json(false, String::from("test by system"), "", None)
+pub async fn delete_handler(
+    WithRejection(Path(code), _): WithRejection<Path<Uuid>, ApiError>,
+) -> ResponseResult<Json<Value>> {
+    match super::service::delete_service(code.into()).await {
+        Ok(res) => output_json(true, "data deleted successfully".into(), res, None),
+        Err(err) => output_json(false, err.to_string(), [0; 0], Some(204)),
+    }
 } //end func

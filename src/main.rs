@@ -1,10 +1,9 @@
 #![allow(unused)]
-use anyhow::{Context, Result};
-use axum::{http::uri::Port, middleware, Router};
-use dotenvy::dotenv;
-use std::{env, error::Error};
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing::{debug, error, info, warn};
+use anyhow::Result;
+use axum::{middleware, Router};
+use std::env;
+use tower_http::cors::CorsLayer;
+use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 mod config;
@@ -12,6 +11,7 @@ mod features;
 mod middlewares;
 mod routes;
 mod utils;
+mod models;
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -1,16 +1,19 @@
 use anyhow::Error;
+use axum::extract::Query;
 use uuid::Uuid;
 
-use crate::config::database::get_db;
+use crate::{config::database::get_db, models::app_model::Pagination};
 
 use super::{
     model::{NotesModel, NotesPayload},
-    repository::{self, NoteRepo},
+    repository::NoteRepo,
 };
 
-pub async fn list_service() -> Result<NotesModel, Error> {
-    // Ok(NoteRepo::rows().await?)
-    todo!()
+pub async fn list_service(query: Query<Pagination>) -> Result<Vec<NotesModel>, Error> {
+    let params = query.0;
+    let limit = params.size.unwrap_or(10);
+    let offset = (params.page.unwrap_or(1) - 1) * limit;
+    Ok(NoteRepo::new(get_db()).get_all(limit, offset).await?)
 } //end func
 
 pub async fn save_service(payload: NotesPayload) -> Result<NotesModel, Error> {
@@ -25,13 +28,21 @@ pub async fn save_service(payload: NotesPayload) -> Result<NotesModel, Error> {
 } //end func
 
 pub async fn detail_service(code: String) -> Result<NotesModel, Error> {
-    Ok(NoteRepo::new(get_db()).get_by_code(code).await?)
+    Ok(NoteRepo::new(get_db()).get_single(code).await?)
 } //end func
 
-pub fn update_service() -> Option<String> {
-    todo!()
+pub async fn update_service(code: String, payload: NotesPayload) -> Result<NotesModel, Error> {
+    let item = NotesModel {
+        code,
+        title: payload.title,
+        content: payload.content,
+        visibility: payload.visibility,
+        ..Default::default()
+    };
+
+    Ok(NoteRepo::new(get_db()).update(item).await?)
 } //end func
 
-pub fn delete_service() -> Option<String> {
-    todo!()
+pub async fn delete_service(code: String) -> Result<NotesModel, Error> {
+    Ok(NoteRepo::new(get_db()).delete_soft(code).await?)
 } //end func

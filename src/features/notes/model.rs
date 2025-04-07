@@ -1,4 +1,5 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
+use chrono_tz::Asia::Jakarta;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
@@ -9,6 +10,13 @@ pub struct NotesPayload {
 
     #[serde(alias = "content")]
     pub content: String,
+
+    #[serde(alias = "visibility", default = "default_visibility")]
+    pub visibility: String,
+}
+
+fn default_visibility() -> String {
+    "public".to_string()
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Default)]
@@ -32,14 +40,14 @@ pub struct NotesModel {
     pub content: String, // required
 
     #[serde(alias = "visibility")]
-    pub visibility: Option<String>,
+    pub visibility: String,
 
     #[serde(alias = "is_deleted")]
     pub is_deleted: Option<bool>,
 
     #[serde(alias = "created_at")]
-    pub created_at: Option<DateTime<Utc>>,
+    pub created_at: Option<DateTime<Local>>,
 
     #[serde(alias = "updated_at")]
-    pub updated_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Local>>,
 }
