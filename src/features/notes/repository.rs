@@ -1,9 +1,9 @@
 use std::result;
 
 use chrono::Local;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 
-use super::model::NotesModel;
+use super::model::{NotesModel, NotesTagsModel};
 
 pub struct NoteRepo<'a> {
     pub db: &'static PgPool,
@@ -70,8 +70,8 @@ impl NoteRepo<'_> {
         Ok(record)
     } // end func
 
-    /// update data
-    pub async fn update(&self, item: NotesModel) -> Result<NotesModel, sqlx::Error> {
+    /// update data with transaction
+    pub async fn update(&self, item: NotesModel,  tx: &mut Transaction<'static, Postgres>) -> Result<NotesModel, sqlx::Error> {
         let sql = format!(
             "UPDATE {}
         SET
@@ -94,7 +94,8 @@ impl NoteRepo<'_> {
         record = record.bind(item.visibility);
         record = record.bind(Local::now());
 
-        let result = record.fetch_one(self.db).await?;
+        // let result = record.fetch_one(self.db).await?;
+        let result = record.fetch_one(&mut **tx).await?;
 
         Ok(result)
     } // end func
@@ -126,5 +127,35 @@ impl NoteRepo<'_> {
         .await?;
 
         Ok(record)
+    } // end func
+
+
+    /****************************/
+
+    // get some needed data for create new notes like available tags etc
+
+    pub async fn get_available_tags(&self, limit: i32) -> Result<Vec<NotesTagsModel>, sqlx::Error> {
+        let record = sqlx::query_as::<_, NotesTagsModel>(
+            format!(
+                "select distinct(tag) from notes_tags nt where created_by is null LIMIT $1"
+            )
+            .as_str(),
+        )
+        .bind(limit)
+        .fetch_all(self.db)
+        .await?;
+
+        Ok(record)
+    } // end func
+
+    pub async fn remove_tags(&self, note_code: String, tx: &mut Transaction<'static, Postgres>) -> Result<(), sqlx::Error> {
+        let record = sqlx::query(
+            format!("DELETE FROM notes_tags WHERE note_code = $1").as_str(),
+        )
+        .bind(note_code)
+        .execute(&mut **tx)
+        .await?;
+
+        Ok(())
     } // end func
 }

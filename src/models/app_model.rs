@@ -10,6 +10,12 @@ pub struct Pagination {
     pub keyword: Option<String>,
 }
 
+// #[derive(Deserialize, Default)]
+// pub struct RequestUser {
+//     #[serde(default, deserialize_with = "empty_string_as_none")]
+//     pub userID: Option<String>,
+// }
+
 /// Serde deserialization decorator to map empty Strings to None,
 /// referensi : https://github.com/tokio-rs/axum/blob/main/examples/query-params-with-empty-strings/src/main.rs
 fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>

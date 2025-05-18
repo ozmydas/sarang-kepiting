@@ -13,6 +13,9 @@ pub struct NotesPayload {
 
     #[serde(alias = "visibility", default = "default_visibility")]
     pub visibility: String,
+
+    #[serde(alias = "tags")]
+    pub tags: Vec<String>,
 }
 
 fn default_visibility() -> String {
@@ -50,4 +53,34 @@ pub struct NotesModel {
 
     #[serde(alias = "updated_at")]
     pub updated_at: Option<DateTime<Local>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Default)]
+pub struct NotesTagsModel {
+    #[serde(alias = "id")]
+    #[sqlx(default)]
+    pub id: Option<i32>,
+
+    #[serde(alias = "note_code")]
+    #[sqlx(default)]
+    pub note_code: String, // required
+
+    #[serde(alias = "tag")]
+    pub tag: String, // required
+
+    #[serde(alias = "created_by")]
+    #[sqlx(default)]
+    pub created_by: Option<i32>,
+
+    #[serde(alias = "created_at")]
+    #[sqlx(default)]
+    pub created_at: Option<DateTime<Local>>, // timestamp with time zone
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Default)]
+pub struct NotesNewCreateInfo {
+    #[serde(rename = "available_tags")]
+    pub tags: Vec<String>,
+    #[serde(rename = "available_folders")]
+    pub folder: Vec<String>,
 }

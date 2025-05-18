@@ -1,17 +1,23 @@
 #![allow(unused)]
 use anyhow::Result;
-use axum::{middleware, Router};
+use axum::{
+    http::{
+        header::{ACCEPT, AUTHORIZATION},
+        Method,
+    },
+    middleware, Router,
+};
 use std::env;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 mod config;
 mod features;
 mod middlewares;
+mod models;
 mod routes;
 mod utils;
-mod models;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -33,14 +39,21 @@ async fn main() -> Result<()> {
     config::database::connect_db().await?;
 
     // Axum init route and middlewares
+    let cors = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods(vec![Method::GET, Method::POST, Method::OPTIONS])
+        .allow_headers(Any)
+        // allow requests from any origin
+        .allow_origin(Any);
+
     let app = Router::new()
         .merge(routes::app_routes())
         .nest("/api", routes::api_routes())
-        .layer(CorsLayer::permissive())
         // .layer(TraceLayer::new_for_http())
         .layer(middleware::map_response(
             middlewares::response::main_response_mapper,
-        ));
+        ))
+        .layer(cors);
 
     // Axum start server
     let url = env::var("APP_URL").unwrap_or("0.0.0.0".to_string());

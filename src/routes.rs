@@ -1,12 +1,18 @@
 use axum::{
-    middleware, routing::{get, get_service, post}, Router
+    middleware,
+    routing::{get, get_service, post},
+    Router,
 };
 use tower_http::services::ServeDir;
 
-use crate::{features::{hello, notes, passgen}, middlewares};
+use crate::{
+    features::{hello, notes, passgen},
+    middlewares,
+};
 
 pub fn app_routes() -> Router {
-    Router::new().merge(hello::handler::hello_routes())
+    Router::new()
+        .merge(hello::handler::hello_routes())
 }
 
 pub fn api_routes() -> Router {
