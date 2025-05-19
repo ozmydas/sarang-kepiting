@@ -10,11 +10,11 @@ use uuid::Uuid;
 use crate::{config::database::get_db, models::app_model::Pagination};
 
 use super::{
-    model::{NotesModel, NotesNewCreateInfo, NotesPayload, NotesTagsModel},
+    model::{self, NotesModel, NotesNewCreateInfo, NotesPayload, NotesTagsModel},
     repository::NoteRepo,
 };
 
-pub async fn list_service(query: Query<Pagination>) -> Result<Vec<NotesModel>, Error> {
+pub async fn list_service(query: Query<Pagination>) -> Result<Vec<model::NotesList>, Error> {
     let params = query.0;
     let limit = params.size.unwrap_or(10);
     let offset = (params.page.unwrap_or(1) - 1) * limit;
@@ -22,14 +22,36 @@ pub async fn list_service(query: Query<Pagination>) -> Result<Vec<NotesModel>, E
 } //end func
 
 pub async fn save_service(payload: NotesPayload) -> Result<NotesModel, Error> {
+    let code : String = Uuid::new_v4().into();
     let item = NotesModel {
-        code: Uuid::new_v4().into(),
+        code: code.clone(),
         title: payload.title,
         content: payload.content,
         ..Default::default()
     };
 
-    Ok(NoteRepo::new(get_db()).create(item).await?)
+    let db = get_db();
+    let mut tx = db.begin().await?;
+    let result = NoteRepo::new(db).create(item, &mut tx).await?;
+
+    // insert latest tag
+    if (!payload.tags.is_empty()) {
+        let mut new_tags: Vec<NotesTagsModel> = Vec::new();
+
+        for tag in payload.tags {
+            new_tags.push(NotesTagsModel {
+                note_code: code.clone(),
+                tag: tag,
+                ..Default::default()
+            });
+        }
+
+        NoteRepo::new(db).insert_tags(new_tags, &mut tx).await?;
+    }
+
+    tx.commit().await;
+
+    Ok(result)
 } //end func
 
 pub async fn detail_service(code: String) -> Result<NotesModel, Error> {
@@ -53,8 +75,22 @@ pub async fn update_service(code: String, payload: NotesPayload) -> Result<Notes
     let updated_main_data = NoteRepo::new(db).update(item, &mut tx).await?;
 
     // remove tags
-    NoteRepo::new(db).remove_tags(code, &mut tx).await?;
+    NoteRepo::new(db).remove_tags(code.clone(), &mut tx).await?;
 
+    // insert latest tag
+    if (!payload.tags.is_empty()) {
+        let mut new_tags: Vec<NotesTagsModel> = Vec::new();
+
+        for tag in payload.tags {
+            new_tags.push(NotesTagsModel {
+                note_code: code.clone(),
+                tag: tag,
+                ..Default::default()
+            });
+        }
+
+        NoteRepo::new(db).insert_tags(new_tags, &mut tx).await?;
+    }
     tx.commit().await;
 
     Ok(updated_main_data)

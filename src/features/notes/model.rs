@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local, Utc};
 use chrono_tz::Asia::Jakarta;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sqlx::prelude::FromRow;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,6 +41,9 @@ pub struct NotesModel {
 
     #[serde(alias = "content")]
     pub content: String, // required
+
+    #[serde(alias = "snippet")]
+    pub snippet: Option<String>,
 
     #[serde(alias = "visibility")]
     pub visibility: String,
@@ -83,4 +86,44 @@ pub struct NotesNewCreateInfo {
     pub tags: Vec<String>,
     #[serde(rename = "available_folders")]
     pub folder: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Default)]
+pub struct NotesList {
+    #[serde(alias = "id")]
+    pub id: Option<i32>,
+
+    #[serde(alias = "code")]
+    pub code: String, // required
+
+    #[serde(alias = "title")]
+    pub title: String, // required
+
+    #[serde(alias = "tags", serialize_with = "tags_modifier", default)]
+    #[sqlx(default)]
+    pub tags: Option<String>,
+
+    #[serde(alias = "snippet")]
+    pub snippet: Option<String>,
+
+    #[serde(alias = "updated_at")]
+    pub updated_at: Option<DateTime<Local>>,
+}
+
+fn tags_modifier<S>(value: &Option<String>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match value {
+        Some(value) => {
+            let array_tags: Vec<String> = value
+                .split(',')
+                .map(|part| part.trim().to_string()) // trim spaces and convert to String
+                .collect();
+            array_tags.serialize(serializer)
+        }
+        None => serializer.serialize_none(),
+    }
+
+    // let forced_vec = vec!["hello".to_string(), "world".to_string()];
 }
